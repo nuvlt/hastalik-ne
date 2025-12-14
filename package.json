@@ -1,0 +1,18 @@
+{
+  "name": "cocuk-hastalik-takip",
+  "version": "1.0.0",
+  "description": "Çocuk hastalıklarını belirtilerine göre takip etmek için interaktif web uygulaması",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "health",
+    "symptoms",
+    "children",
+    "disease-tracker",
+    "turkish"
+  ],
+  "author": "",
+  "license": "MIT"
+}
