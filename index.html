@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çocuk Hastalık Belirtileri | Symptom Checker</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #222230;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #2a2a3a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --virus-color: #8b5cf6;
+            --bacteria-color: #f97316;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba(139, 92, 246, 0.1), transparent),
+                radial-gradient(ellipse 40% 30% at 0% 80%, rgba(249, 115, 22, 0.08), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #root {
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // Hastalık verileri
+        const diseases = [
+            {
+                id: 'adenovirus',
+                name: 'Adenovirüs',
+                nameEn: 'Adenovirus',
+                type: 'virus',
+                symptoms: ['fever', 'cough', 'breath', 'throat', 'fatigue', 'diarrhea', 'vomit', 'conjunctivitis']
+            },
+            {
+                id: 'rsv',
+                name: 'RSV',
+                nameEn: 'RSV',
+                type: 'virus',
+                symptoms: ['highFever', 'cough', 'dryCough', 'breath', 'throat']
+            },
+            {
+                id: 'strepA',
+                name: 'Beta (Streptokok-A)',
+                nameEn: 'Strep-A',
+                type: 'bacteria',
+                symptoms: ['fever', 'highFever', 'throat', 'fatigue', 'rash', 'itchySkin', 'tonsilSwelling', 'whiteSpots']
+            },
+            {
+                id: 'handFootMouth',
+                name: 'El-Ayak-Ağız',
+                nameEn: 'Hand-Foot-Mouth',
+                type: 'virus',
+                symptoms: ['fever', 'throat', 'fatigue', 'rash', 'tonsilSwelling']
+            },
+            {
+                id: 'covid',
+                name: 'Covid-19',
+                nameEn: 'COVID-19',
+                type: 'virus',
+                symptoms: ['fever', 'cough', 'dryCough', 'breath', 'throat', 'headache', 'fatigue', 'lossSmellTaste']
+            },
+            {
+                id: 'cold',
+                name: 'Soğuk Algınlığı',
+                nameEn: 'Common Cold',
+                type: 'virus',
+                symptoms: ['cough', 'bodyPain', 'throat', 'sneezing', 'runnyNose']
+            },
+            {
+                id: 'flu',
+                name: 'Grip',
+                nameEn: 'Flu',
+                type: 'virus',
+                symptoms: ['fever', 'cough', 'headache', 'fatigue']
+            },
+            {
+                id: 'influenzaA',
+                name: 'İnfluenza A',
+                nameEn: 'Influenza A',
+                type: 'virus',
+                symptoms: ['highFever', 'dryCough', 'breath', 'bodyPain', 'throat', 'runnyNose', 'headache', 'diarrhea', 'vomit']
+            },
+            {
+                id: 'allergy',
+                name: 'Alerji',
+                nameEn: 'Allergy',
+                type: 'other',
+                symptoms: ['dryCough', 'breath', 'sneezing', 'runnyNose', 'wateryEyes']
+            },
+            {
+                id: 'earInfection',
+                name: 'Orta Kulak İltihabı',
+                nameEn: 'Ear Infection',
+                type: 'both',
+                symptoms: ['fever', 'highFever', 'fatigue', 'runnyNose', 'diarrhea', 'earache', 'balance']
+            }
+        ];
+
+        // Semptom kategorileri
+        const symptomCategories = [
+            {
+                name: 'Ateş',
+                nameEn: 'Fever',
+                icon: '🌡️',
+                symptoms: [
+                    { id: 'fever', name: 'Ateş (37.5°+)', nameEn: 'Fever (37.5°+)' },
+                    { id: 'highFever', name: 'Yüksek Ateş (39°+)', nameEn: 'High Fever (39°+)' }
+                ]
+            },
+            {
+                name: 'Solunum',
+                nameEn: 'Respiratory',
+                icon: '💨',
+                symptoms: [
+                    { id: 'cough', name: 'Öksürük', nameEn: 'Cough' },
+                    { id: 'dryCough', name: 'Kuru Öksürük', nameEn: 'Dry Cough' },
+                    { id: 'breath', name: 'Nefes Darlığı', nameEn: 'Shortness of Breath' },
+                    { id: 'sneezing', name: 'Hapşırık', nameEn: 'Sneezing' },
+                    { id: 'runnyNose', name: 'Burun Akıntısı/Tıkanıklığı', nameEn: 'Runny/Stuffy Nose' }
+                ]
+            },
+            {
+                name: 'Boğaz & Ağız',
+                nameEn: 'Throat & Mouth',
+                icon: '👄',
+                symptoms: [
+                    { id: 'throat', name: 'Boğaz Ağrısı', nameEn: 'Sore Throat' },
+                    { id: 'tonsilSwelling', name: 'Bademcik Şişmesi', nameEn: 'Tonsil Swelling' },
+                    { id: 'whiteSpots', name: 'Boğazda Beyaz Lekeler', nameEn: 'White Spots in Throat' },
+                    { id: 'lossSmellTaste', name: 'Koku/Tat Kaybı', nameEn: 'Loss of Smell & Taste' }
+                ]
+            },
+            {
+                name: 'Genel',
+                nameEn: 'General',
+                icon: '😷',
+                symptoms: [
+                    { id: 'bodyPain', name: 'Vücut Ağrısı', nameEn: 'Body Pain' },
+                    { id: 'headache', name: 'Baş Ağrısı', nameEn: 'Headache' },
+                    { id: 'fatigue', name: 'Yorgunluk/Halsizlik', nameEn: 'Fatigue/Weakness' }
+                ]
+            },
+            {
+                name: 'Sindirim',
+                nameEn: 'Digestive',
+                icon: '🤢',
+                symptoms: [
+                    { id: 'diarrhea', name: 'İshal', nameEn: 'Diarrhea' },
+                    { id: 'vomit', name: 'Kusma', nameEn: 'Vomiting' }
+                ]
+            },
+            {
+                name: 'Cilt & Göz',
+                nameEn: 'Skin & Eyes',
+                icon: '👁️',
+                symptoms: [
+                    { id: 'rash', name: 'Döküntü', nameEn: 'Rash' },
+                    { id: 'itchySkin', name: 'Kaşıntılı Cilt', nameEn: 'Itchy Skin' },
+                    { id: 'conjunctivitis', name: 'Konjonktivit', nameEn: 'Conjunctivitis' },
+                    { id: 'wateryEyes', name: 'Gözlerde Kaşıntı/Sulanma', nameEn: 'Itchy/Watery Eyes' }
+                ]
+            },
+            {
+                name: 'Kulak',
+                nameEn: 'Ear',
+                icon: '👂',
+                symptoms: [
+                    { id: 'earache', name: 'Kulak Ağrısı', nameEn: 'Earache' },
+                    { id: 'balance', name: 'Denge Problemleri', nameEn: 'Balance Issues' }
+                ]
+            }
+        ];
+
+        // Tüm semptomları düz liste olarak al
+        const allSymptoms = symptomCategories.flatMap(cat => cat.symptoms);
+
+        // Checkbox komponenti
+        const Checkbox = ({ checked, onChange, label, labelEn }) => (
+            <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 14px',
+                background: checked ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${checked ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                borderRadius: '10px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                userSelect: 'none',
+            }}
+            onMouseEnter={e => {
+                if (!checked) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                    e.currentTarget.style.borderColor = 'var(--text-muted)';
+                }
+            }}
+            onMouseLeave={e => {
+                if (!checked) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                }
+            }}
+            >
+                <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '6px',
+                    border: `2px solid ${checked ? 'var(--accent-primary)' : 'var(--text-muted)'}`,
+                    background: checked ? 'var(--accent-primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0,
+                }}>
+                    {checked && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                    )}
+                </div>
+                <input 
+                    type="checkbox" 
+                    checked={checked} 
+                    onChange={onChange}
+                    style={{ display: 'none' }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ 
+                        fontSize: '14px', 
+                        fontWeight: 500,
+                        color: checked ? 'var(--text-primary)' : 'var(--text-secondary)'
+                    }}>{label}</span>
+                    <span style={{ 
+                        fontSize: '11px', 
+                        color: 'var(--text-muted)',
+                        fontFamily: 'Outfit, sans-serif'
+                    }}>{labelEn}</span>
+                </div>
+            </label>
+        );
+
+        // Hastalık kartı
+        const DiseaseCard = ({ disease, matchedSymptoms, totalSelected, rank }) => {
+            const matchPercentage = totalSelected > 0 ? Math.round((matchedSymptoms.length / totalSelected) * 100) : 0;
+            const coveragePercentage = Math.round((matchedSymptoms.length / disease.symptoms.length) * 100);
+            
+            const getTypeInfo = (type) => {
+                switch(type) {
+                    case 'virus': return { label: 'Virüs', color: 'var(--virus-color)', bg: 'rgba(139, 92, 246, 0.15)' };
+                    case 'bacteria': return { label: 'Bakteri', color: 'var(--bacteria-color)', bg: 'rgba(249, 115, 22, 0.15)' };
+                    case 'both': return { label: 'Virüs/Bakteri', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' };
+                    default: return { label: 'Diğer', color: 'var(--text-muted)', bg: 'rgba(100, 116, 139, 0.15)' };
+                }
+            };
+
+            const typeInfo = getTypeInfo(disease.type);
+            const isTopMatch = rank <= 3 && matchPercentage >= 50;
+
+            return (
+                <div style={{
+                    background: 'var(--bg-card)',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    border: `1px solid ${isTopMatch ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    transform: isTopMatch ? 'scale(1)' : 'scale(1)',
+                    boxShadow: isTopMatch ? '0 0 30px var(--accent-glow)' : 'none',
+                }}
+                onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.borderColor = 'var(--accent-secondary)';
+                }}
+                onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = isTopMatch ? 'var(--accent-primary)' : 'var(--border-color)';
+                }}
+                >
+                    {isTopMatch && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '3px',
+                            background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))',
+                        }} />
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                        <div>
+                            <h3 style={{ 
+                                fontSize: '18px', 
+                                fontWeight: 700, 
+                                marginBottom: '4px',
+                                fontFamily: 'Outfit, sans-serif'
+                            }}>{disease.name}</h3>
+                            <span style={{ 
+                                fontSize: '13px', 
+                                color: 'var(--text-muted)',
+                                fontFamily: 'Outfit, sans-serif'
+                            }}>{disease.nameEn}</span>
+                        </div>
+                        <span style={{
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            background: typeInfo.bg,
+                            color: typeInfo.color,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                        }}>{typeInfo.label}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Eşleşme
+                            </div>
+                            <div style={{ 
+                                fontSize: '28px', 
+                                fontWeight: 800, 
+                                color: matchPercentage >= 70 ? 'var(--success)' : matchPercentage >= 40 ? 'var(--warning)' : 'var(--text-secondary)',
+                                fontFamily: 'Outfit, sans-serif',
+                                lineHeight: 1
+                            }}>
+                                %{matchPercentage}
+                            </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Kapsam
+                            </div>
+                            <div style={{ 
+                                fontSize: '28px', 
+                                fontWeight: 800, 
+                                color: 'var(--text-secondary)',
+                                fontFamily: 'Outfit, sans-serif',
+                                lineHeight: 1
+                            }}>
+                                %{coveragePercentage}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ 
+                        background: 'rgba(0,0,0,0.3)', 
+                        borderRadius: '8px', 
+                        height: '6px', 
+                        overflow: 'hidden',
+                        marginBottom: '16px'
+                    }}>
+                        <div style={{
+                            height: '100%',
+                            width: `${matchPercentage}%`,
+                            background: matchPercentage >= 70 ? 'var(--success)' : matchPercentage >= 40 ? 'var(--warning)' : 'var(--accent-primary)',
+                            borderRadius: '8px',
+                            transition: 'width 0.5s ease'
+                        }} />
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{matchedSymptoms.length}</span> / {disease.symptoms.length} belirti eşleşti
+                    </div>
+
+                    {matchedSymptoms.length > 0 && (
+                        <div style={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            gap: '6px', 
+                            marginTop: '12px',
+                            paddingTop: '12px',
+                            borderTop: '1px solid var(--border-color)'
+                        }}>
+                            {matchedSymptoms.map(symptomId => {
+                                const symptom = allSymptoms.find(s => s.id === symptomId);
+                                return symptom ? (
+                                    <span key={symptomId} style={{
+                                        padding: '4px 8px',
+                                        background: 'rgba(99, 102, 241, 0.1)',
+                                        borderRadius: '6px',
+                                        fontSize: '11px',
+                                        color: 'var(--accent-secondary)'
+                                    }}>
+                                        {symptom.name}
+                                    </span>
+                                ) : null;
+                            })}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Ana uygulama
+        const App = () => {
+            const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+            const [typeFilter, setTypeFilter] = useState('all');
+            const [expandedCategories, setExpandedCategories] = useState(
+                symptomCategories.map(c => c.name)
+            );
+
+            const toggleSymptom = (symptomId) => {
+                setSelectedSymptoms(prev => 
+                    prev.includes(symptomId) 
+                        ? prev.filter(id => id !== symptomId)
+                        : [...prev, symptomId]
+                );
+            };
+
+            const toggleCategory = (categoryName) => {
+                setExpandedCategories(prev =>
+                    prev.includes(categoryName)
+                        ? prev.filter(name => name !== categoryName)
+                        : [...prev, categoryName]
+                );
+            };
+
+            const clearAll = () => setSelectedSymptoms([]);
+
+            const filteredAndSortedDiseases = useMemo(() => {
+                let filtered = diseases;
+                
+                if (typeFilter !== 'all') {
+                    filtered = diseases.filter(d => {
+                        if (typeFilter === 'virus') return d.type === 'virus' || d.type === 'both';
+                        if (typeFilter === 'bacteria') return d.type === 'bacteria' || d.type === 'both';
+                        return d.type === typeFilter;
+                    });
+                }
+
+                return filtered
+                    .map(disease => ({
+                        ...disease,
+                        matchedSymptoms: disease.symptoms.filter(s => selectedSymptoms.includes(s)),
+                        matchScore: disease.symptoms.filter(s => selectedSymptoms.includes(s)).length
+                    }))
+                    .sort((a, b) => b.matchScore - a.matchScore);
+            }, [selectedSymptoms, typeFilter]);
+
+            return (
+                <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 20px 60px' }}>
+                    {/* Header */}
+                    <header style={{ textAlign: 'center', marginBottom: '48px' }} className="animate-in stagger-1">
+                        <div style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '12px',
+                            padding: '8px 16px',
+                            background: 'rgba(99, 102, 241, 0.1)',
+                            borderRadius: '100px',
+                            marginBottom: '20px'
+                        }}>
+                            <span style={{ fontSize: '24px' }}>🩺</span>
+                            <span style={{ 
+                                fontSize: '13px', 
+                                fontWeight: 600, 
+                                color: 'var(--accent-secondary)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '1px'
+                            }}>Çocuk Sağlığı</span>
+                        </div>
+                        <h1 style={{ 
+                            fontSize: 'clamp(28px, 5vw, 42px)', 
+                            fontWeight: 800,
+                            fontFamily: 'Outfit, sans-serif',
+                            marginBottom: '12px',
+                            background: 'linear-gradient(135deg, var(--text-primary) 0%, var(--accent-secondary) 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                        }}>
+                            Hastalık Belirti Takibi
+                        </h1>
+                        <p style={{ 
+                            color: 'var(--text-muted)', 
+                            fontSize: '16px',
+                            maxWidth: '500px',
+                            margin: '0 auto',
+                            lineHeight: 1.6
+                        }}>
+                            Belirtileri seçin, olası hastalıkları görün
+                        </p>
+                    </header>
+
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1.2fr)',
+                        gap: '32px',
+                        alignItems: 'start'
+                    }}
+                    className="main-grid"
+                    >
+                        {/* Sol Panel - Semptomlar */}
+                        <div className="animate-in stagger-2">
+                            <div style={{
+                                background: 'var(--bg-secondary)',
+                                borderRadius: '20px',
+                                padding: '24px',
+                                border: '1px solid var(--border-color)',
+                                position: 'sticky',
+                                top: '24px'
+                            }}>
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    marginBottom: '20px'
+                                }}>
+                                    <h2 style={{ 
+                                        fontSize: '18px', 
+                                        fontWeight: 700,
+                                        fontFamily: 'Outfit, sans-serif',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px'
+                                    }}>
+                                        <span>Belirtiler</span>
+                                        {selectedSymptoms.length > 0 && (
+                                            <span style={{
+                                                background: 'var(--accent-primary)',
+                                                color: 'white',
+                                                padding: '2px 10px',
+                                                borderRadius: '100px',
+                                                fontSize: '13px',
+                                                fontWeight: 600
+                                            }}>{selectedSymptoms.length}</span>
+                                        )}
+                                    </h2>
+                                    {selectedSymptoms.length > 0 && (
+                                        <button 
+                                            onClick={clearAll}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: 'none',
+                                                color: 'var(--danger)',
+                                                padding: '6px 12px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                            onMouseEnter={e => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
+                                            onMouseLeave={e => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                        >
+                                            Temizle
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    {symptomCategories.map(category => (
+                                        <div key={category.name}>
+                                            <button
+                                                onClick={() => toggleCategory(category.name)}
+                                                style={{
+                                                    width: '100%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '10px 0',
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    color: 'var(--text-primary)'
+                                                }}
+                                            >
+                                                <span style={{ 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '10px',
+                                                    fontSize: '14px',
+                                                    fontWeight: 600
+                                                }}>
+                                                    <span style={{ fontSize: '18px' }}>{category.icon}</span>
+                                                    {category.name}
+                                                    <span style={{ 
+                                                        fontSize: '11px', 
+                                                        color: 'var(--text-muted)',
+                                                        fontWeight: 400
+                                                    }}>({category.nameEn})</span>
+                                                </span>
+                                                <svg 
+                                                    width="16" 
+                                                    height="16" 
+                                                    viewBox="0 0 16 16" 
+                                                    fill="none"
+                                                    style={{
+                                                        transform: expandedCategories.includes(category.name) ? 'rotate(180deg)' : 'rotate(0)',
+                                                        transition: 'transform 0.2s ease'
+                                                    }}
+                                                >
+                                                    <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </button>
+                                            
+                                            {expandedCategories.includes(category.name) && (
+                                                <div style={{ 
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                                                    gap: '8px',
+                                                    paddingTop: '8px'
+                                                }}>
+                                                    {category.symptoms.map(symptom => (
+                                                        <Checkbox
+                                                            key={symptom.id}
+                                                            checked={selectedSymptoms.includes(symptom.id)}
+                                                            onChange={() => toggleSymptom(symptom.id)}
+                                                            label={symptom.name}
+                                                            labelEn={symptom.nameEn}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sağ Panel - Sonuçlar */}
+                        <div className="animate-in stagger-3">
+                            {/* Filtre */}
+                            <div style={{ 
+                                display: 'flex', 
+                                gap: '8px', 
+                                marginBottom: '20px',
+                                flexWrap: 'wrap'
+                            }}>
+                                {[
+                                    { id: 'all', label: 'Tümü' },
+                                    { id: 'virus', label: 'Virüs', color: 'var(--virus-color)' },
+                                    { id: 'bacteria', label: 'Bakteri', color: 'var(--bacteria-color)' }
+                                ].map(filter => (
+                                    <button
+                                        key={filter.id}
+                                        onClick={() => setTypeFilter(filter.id)}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: '100px',
+                                            border: `1px solid ${typeFilter === filter.id ? (filter.color || 'var(--accent-primary)') : 'var(--border-color)'}`,
+                                            background: typeFilter === filter.id ? `${filter.color || 'var(--accent-primary)'}20` : 'transparent',
+                                            color: typeFilter === filter.id ? (filter.color || 'var(--accent-primary)') : 'var(--text-muted)',
+                                            cursor: 'pointer',
+                                            fontSize: '13px',
+                                            fontWeight: 500,
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        {filter.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Sonuç Başlığı */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <h2 style={{ 
+                                    fontSize: '18px', 
+                                    fontWeight: 700,
+                                    fontFamily: 'Outfit, sans-serif',
+                                    color: 'var(--text-primary)'
+                                }}>
+                                    {selectedSymptoms.length === 0 
+                                        ? 'Olası Hastalıklar' 
+                                        : `${filteredAndSortedDiseases.filter(d => d.matchScore > 0).length} Eşleşme Bulundu`
+                                    }
+                                </h2>
+                            </div>
+
+                            {/* Hastalık Kartları */}
+                            <div style={{ 
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                                gap: '16px'
+                            }}>
+                                {filteredAndSortedDiseases.map((disease, index) => (
+                                    <DiseaseCard
+                                        key={disease.id}
+                                        disease={disease}
+                                        matchedSymptoms={disease.matchedSymptoms}
+                                        totalSelected={selectedSymptoms.length}
+                                        rank={index + 1}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Disclaimer */}
+                    <div style={{
+                        marginTop: '48px',
+                        padding: '20px 24px',
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: '12px',
+                        textAlign: 'center'
+                    }} className="animate-in stagger-4">
+                        <p style={{ 
+                            color: 'var(--warning)', 
+                            fontSize: '13px',
+                            lineHeight: 1.7
+                        }}>
+                            ⚠️ <strong>Uyarı:</strong> Bu araç yalnızca bilgi amaçlıdır ve tıbbi teşhis yerine geçmez. 
+                            Çocuğunuzda herhangi bir belirti gördüğünüzde mutlaka bir sağlık kuruluşuna başvurun.
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // Responsive CSS ekleme
+        const style = document.createElement('style');
+        style.textContent = `
+            @media (max-width: 900px) {
+                .main-grid {
+                    grid-template-columns: 1fr !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
