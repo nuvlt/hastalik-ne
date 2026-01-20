@@ -106,7 +106,7 @@
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
 
-        // Hastalık verileri
+      // Hastalık verileri
         const diseases = [
             {
                 id: 'adenovirus',
@@ -123,6 +123,13 @@
                 symptoms: ['highFever', 'cough', 'dryCough', 'breath', 'throat']
             },
             {
+                id: 'bokavirus',
+                name: 'Bokavirus',
+                nameEn: 'Bocavirus',
+                type: 'virus',
+                symptoms: ['fever', 'cough', 'dryCough', 'breath', 'runnyNose', 'diarrhea', 'vomit']
+            },
+            {
                 id: 'strepA',
                 name: 'Beta (Streptokok-A)',
                 nameEn: 'Strep-A',
@@ -135,6 +142,13 @@
                 nameEn: 'Hand-Foot-Mouth',
                 type: 'virus',
                 symptoms: ['fever', 'throat', 'fatigue', 'rash', 'tonsilSwelling']
+            },
+            {
+                id: 'chickenpox',
+                name: 'Su Çiçeği',
+                nameEn: 'Chickenpox',
+                type: 'virus',
+                symptoms: ['fever', 'fatigue', 'rash', 'itchySkin', 'headache']
             },
             {
                 id: 'covid',
@@ -163,6 +177,27 @@
                 nameEn: 'Influenza A',
                 type: 'virus',
                 symptoms: ['highFever', 'dryCough', 'breath', 'bodyPain', 'throat', 'runnyNose', 'headache', 'diarrhea', 'vomit']
+            },
+            {
+                id: 'pertussis',
+                name: 'Boğmaca',
+                nameEn: 'Whooping Cough',
+                type: 'bacteria',
+                symptoms: ['cough', 'dryCough', 'breath', 'vomit', 'runnyNose', 'fatigue']
+            },
+            {
+                id: 'norovirus',
+                name: 'Norovirüs/Rotavirüs',
+                nameEn: 'Norovirus/Rotavirus',
+                type: 'virus',
+                symptoms: ['fever', 'diarrhea', 'vomit', 'bodyPain', 'headache', 'fatigue']
+            },
+            {
+                id: 'meningitis',
+                name: 'Menenjit',
+                nameEn: 'Meningitis',
+                type: 'both',
+                symptoms: ['highFever', 'headache', 'vomit', 'neckStiffness', 'lightSensitivity', 'confusion', 'rash']
             },
             {
                 id: 'allergy',
